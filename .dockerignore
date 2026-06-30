@@ -1,0 +1,29 @@
+# ignore build outputs and dependencies
+.next/
+node_modules/
+out/
+build/
+
+# ignore git files
+.git/
+.gitignore
+.gitattributes
+
+# ignore local secrets and configurations
+.env*
+.z-ai-config
+firebase-credentials.json
+
+# ignore logs and temporary files
+*.log
+dev.log
+server.log
+test/
+prompt/
+
+# ignore readme and documentation
+README.md
+worklog.md
+walkthrough.md
+implementation_plan.md
+task.md

@@ -1,0 +1,155 @@
+// Vikash Path - AI-Powered Hyperlocal Progress Tracker
+// Prisma schema for civic complaint tracking with AI agents
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  role         String   @default("CITIZEN") // CITIZEN | MUNICIPAL
+  name         String
+  phone        String?  @unique
+  email        String?  @unique
+  employeeId   String?  // For municipal officials
+  department   String?  // For municipal officials
+  govtDomain   String?  // e.g., nagarnigam.gov.in
+  avatar       String?
+  swachhCoins  Int      @default(0)
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  complaints       Complaint[] @relation("complaints")
+  votes            Vote[]
+  budgetEstimates  BudgetEstimate[]
+  resolutions      Resolution[]
+  badges           Badge[]
+  notifications    Notification[]
+}
+
+model Complaint {
+  id             String   @id @default(cuid())
+  title          String
+  description    String
+  category       String   // POTHOLE | GARBAGE | WATER | STREETLIGHT | DRAINAGE | ROAD | OTHER
+  severity       String   @default("MEDIUM") // LOW | MEDIUM | HIGH | CRITICAL
+  status         String   @default("PENDING") // PENDING | CLUSTERED | VOTING | APPROVED | IN_PROGRESS | RESOLVED
+  address        String
+  lat            Float
+  lng            Float
+  ward           String?
+  imageUrl       String?
+  audioTranscript String? // Bhasha translation output
+  voiceLang      String?  // original language (Hindi, Maithili, Bhojpuri, etc.)
+  aiAnalysis     String?  // VLM analysis of the image
+  priorityScore  Float    @default(0)
+  clusterId      String?
+  reporterId     String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  reporter       User     @relation("complaints", fields: [reporterId], references: [id])
+  cluster        Cluster? @relation(fields: [clusterId], references: [id])
+  votes          Vote[]
+  budgetEstimate BudgetEstimate?
+  resolution     Resolution?
+  notifications  Notification[]
+
+  @@index([status])
+  @@index([category])
+  @@index([clusterId])
+}
+
+model Cluster {
+  id             String   @id @default(cuid())
+  name           String
+  centerLat      Float
+  centerLng      Float
+  radius         Float    @default(50) // meters
+  category       String
+  complaintCount Int      @default(0)
+  totalVotes     Int      @default(0)
+  priorityScore  Float    @default(0)
+  status         String   @default("VOTING") // VOTING | APPROVED | IN_PROGRESS | RESOLVED
+  summary        String?  // AI-generated summary of grouped complaints
+  createdAt      DateTime @default(now())
+
+  complaints     Complaint[]
+}
+
+model Vote {
+  id          String   @id @default(cuid())
+  complaintId String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@unique([complaintId, userId])
+}
+
+model BudgetEstimate {
+  id              String   @id @default(cuid())
+  complaintId     String   @unique
+  estimatedCost   Float    // in INR
+  costMin         Float
+  costMax         Float
+  materials       String   // JSON string of materials list
+  timeline        String   // e.g., "7-10 days"
+  engineeringDraft String  // full AI-generated engineering draft
+  laborRequired   String
+  equipmentNeeded String
+  riskLevel       String   @default("LOW")
+  createdBy       String
+  createdAt       DateTime @default(now())
+
+  complaint       Complaint @relation(fields: [complaintId], references: [id])
+  creator         User      @relation(fields: [createdBy], references: [id])
+}
+
+model Resolution {
+  id              String   @id @default(cuid())
+  complaintId     String   @unique
+  resolvedBy      String
+  proofImageUrl   String?
+  resolutionNote  String
+  actualCost      Float?
+  resolvedAt      DateTime @default(now())
+
+  complaint       Complaint @relation(fields: [complaintId], references: [id])
+  resolver        User      @relation(fields: [resolvedBy], references: [id])
+}
+
+model Badge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeType String   // SWACHHTA_YODHA | GRAM_VEER | COMMUNITY_LEADER | FIRST_REPORT | VERIFIED_OFFICIAL
+  earnedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, badgeType])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  complaintId String?
+  type        String   // RESOLUTION_ALERT | VOTE_MILESTONE | BADGE_EARNED | PRIORITY_UPDATE
+  title       String
+  message     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user        User      @relation(fields: [userId], references: [id])
+  complaint   Complaint? @relation(fields: [complaintId], references: [id])
+
+  @@index([userId, isRead])
+}
