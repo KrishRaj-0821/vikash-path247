@@ -125,7 +125,7 @@ async function request<T>(
 
 export const api = {
   // Auth
-  citizenLogin: (body: { phone?: string; name?: string; guest?: boolean }) =>
+  citizenLogin: (body: { phone?: string; name?: string; email?: string; otp?: string; guest?: boolean }) =>
     request<{ user: SessionUser }>("/api/auth/citizen", { method: "POST", body: JSON.stringify(body) }),
   municipalLogin: (body: { email: string; employeeId: string; name?: string }) =>
     request<{ user: SessionUser }>("/api/auth/municipal", { method: "POST", body: JSON.stringify(body) }),

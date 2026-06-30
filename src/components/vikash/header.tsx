@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Coins, LogOut, ShieldCheck, User as UserIcon, ChevronDown, Bell } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { logOut as firebaseLogOut } from "@/lib/firebase";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 
@@ -45,6 +46,11 @@ export function Header() {
   const handleLogout = async () => {
     try {
       await api.logout();
+      try {
+        await firebaseLogOut();
+      } catch (err) {
+        console.error("Firebase logout failed", err);
+      }
       setUser(null);
       toast.success("Logged out successfully");
     } catch {

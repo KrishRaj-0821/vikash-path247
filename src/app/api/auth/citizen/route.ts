@@ -13,15 +13,16 @@ import { setSession, SessionUser } from "@/lib/session";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
-    const { phone, name, otp, guest } = body as {
+    const { phone, name, email, otp, guest } = body as {
       phone?: string;
       name?: string;
+      email?: string;
       otp?: string;
       guest?: boolean;
     };
 
     // ----- Guest Nagrik path -----
-    if (guest || !phone || !String(phone).trim()) {
+    if (guest || (!phone && !email)) {
       const guestUser = await db.user.create({
         data: {
           role: "CITIZEN",
@@ -31,6 +32,32 @@ export async function POST(req: NextRequest) {
       });
       await setSession(guestUser.id);
       return NextResponse.json({ user: toSessionUser(guestUser) });
+    }
+
+    // ----- Google Email path -----
+    if (email) {
+      const cleanEmail = String(email).trim().toLowerCase();
+      const cleanName = name && String(name).trim() ? String(name).trim() : "Nagrik";
+
+      let user = await db.user.findUnique({ where: { email: cleanEmail } });
+      if (!user) {
+        user = await db.user.create({
+          data: {
+            role: "CITIZEN",
+            name: cleanName,
+            email: cleanEmail,
+            verified: true,
+          },
+        });
+      } else if (user.role !== "CITIZEN") {
+        return NextResponse.json(
+          { error: "This email is linked to a municipal account. Please use official login." },
+          { status: 403 }
+        );
+      }
+
+      await setSession(user.id);
+      return NextResponse.json({ user: toSessionUser(user) });
     }
 
     // ----- Phone + OTP path -----
