@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   allowedDevOrigins: ["*.space-z.ai", "*.chatglm.cn"],
   outputFileTracingIncludes: {
-    "/api/**/*": ["./db/**/*", "./.z-ai-config"],
+    "**/*": ["./db/**/*", "./.z-ai-config"],
   },
 };
 

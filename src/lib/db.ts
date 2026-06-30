@@ -2,6 +2,13 @@ import { PrismaClient } from '@prisma/client'
 import fs from 'fs'
 import path from 'path'
 
+// Force Next.js NFT tracer to bundle the SQLite database file
+try {
+  fs.readFileSync(path.join(process.cwd(), 'db', 'custom.db'));
+} catch {
+  // Ignore trace error
+}
+
 // If we are in Vercel/serverless and using SQLite, copy the db to /tmp so it's writeable
 if (process.env.VERCEL === '1') {
   const originalDbPath = path.join(process.cwd(), 'db', 'custom.db')
